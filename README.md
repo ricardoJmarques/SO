@@ -8,6 +8,7 @@ gcc -o sobucli -Wall --ansi -pedantic -g cliente.c
 gcc -o sobusrv -Wall --ansi -pedantic -g servidor.c
 
 #comandos importantes
-awk '{print $9}';
-ls -alr -d -1 "$PWD"/{*,.*}
-
+	awk '{print $9}'
+	ls -alr -d -1 "$PWD"/{*,.*}
+	find * -type f
+	find * -type d

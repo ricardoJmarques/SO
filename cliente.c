@@ -69,15 +69,14 @@ int enviaComando(char* FIFO, char TIPO){
 }
 
 int iniciaTx(char* FIFO, char* ficheiro){
-  int fdFicheiro, fdFIFO;
+  int fdFicheiro, fdFIFO, tamMax;
   char buffer[4096];
   fdFicheiro = open(ficheiro, O_RDONLY);
   fdFIFO = open(FIFO, O_WRONLY);
   printf("TX FIFO: %s\n", FIFO);
   printf("TX File: %s\n", ficheiro);
-  while (read(fdFicheiro, buffer, 4096) > 0){
-    printf("\n%s\n", buffer);
-    write(fdFIFO, buffer, 4096);
+  while ((tamMax=read(fdFicheiro, buffer, 4096)) > 0){
+    write(fdFIFO, buffer, tamMax);
   }
   close(fdFIFO);
   close(fdFicheiro);
@@ -85,16 +84,15 @@ int iniciaTx(char* FIFO, char* ficheiro){
 }
 
 int iniciaRx(char* FIFO, char* ficheiro){
-  int fdFicheiro, fdFIFO;
+  int fdFicheiro, fdFIFO, tamMax;
   char buffer[4096];
-  mkfifo(FIFO, 0666);
   printf("RX FIFO: %s\n", FIFO);
   printf("RX File: %s\n", ficheiro);
+  mkfifo(FIFO, 0666);
+  fdFicheiro = open(ficheiro, O_WRONLY | O_CREAT, 0644); /*stdout*/
   fdFIFO = open(FIFO, O_RDONLY); /*stdin*/
-  fdFicheiro = open(ficheiro, O_WRONLY | O_APPEND | O_CREAT ); /*stdout*/
-  while (read(fdFIFO, buffer, 4096) > 0){
-    printf("\n%s\n", buffer);
-    write(fdFicheiro, buffer, 4096);
+  while ((tamMax=read(fdFIFO, buffer, 4096)) > 0){
+    write(fdFicheiro, buffer, tamMax);
   }
   close(fdFicheiro);
   close(fdFIFO);
@@ -132,7 +130,8 @@ int backupCmd(int argc, char* argv[]){
   int pid;
   pid=getpid();
   if (argc == 3){
-    fd = open(argv[2], O_RDONLY);
+    /*fd = open(argv[2], O_RDONLY);*/
+    fd = open("teste/clientfiles/a.txt", O_RDONLY);
       if (fd == -1){
         printf("Erro ao abrir Ficheiro\n");
       }
@@ -143,9 +142,9 @@ int backupCmd(int argc, char* argv[]){
         path = strtok(NULL, "\n");
         printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
         printf("inicia copia do ficheiro %s para o servidor.\n", argv[2]);
-        sprintf(str1, "./teste/fifos/%d", pid);
+        sprintf(str1, "teste/fifos/%d", pid);
         printf("%s - %s\n",str1,path);
-        iniciaTx(str1, path);
+        iniciaTx(str1, "teste/clientfiles/a.txt");
       }
   }
   
@@ -162,7 +161,7 @@ int backupCmd(int argc, char* argv[]){
         path = strtok(NULL, "\n");
         printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
         printf("inicia copia do ficheiro %s para o servidor.\n", argv[i]);
-        sprintf(str1, "./teste/fifos/%d", pid);
+        sprintf(str1, "teste/fifos/%d", pid);
         iniciaTx(str1, path);
       }
     }
@@ -188,7 +187,7 @@ int restoreCmd(int argc, char *argv[]){
       path = strtok(NULL, "\n");
       printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
       printf("inicia reposicao do ficheiro %s do servidor.\n", argv[2]);
-      sprintf(str1, "./teste/fifos/%d", pid);
+      sprintf(str1, "teste/fifos/%d", pid);
       iniciaRx(str1, path);
     }
   }
@@ -206,7 +205,7 @@ int restoreCmd(int argc, char *argv[]){
         path = strtok(NULL, "\n");
         printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
         printf("inicia reposicao do ficheiro %s do servidor.\n", argv[i]);
-        sprintf(str1, "./teste/fifos/%d", pid);
+        sprintf(str1, "teste/fifos/%d", pid);
         iniciaRx(str1, path);
       }
     }
@@ -216,7 +215,7 @@ int restoreCmd(int argc, char *argv[]){
 }
     
 int main(int argc, char *argv[]){
-  char *sobusrv = "./teste/fifos/srv"; /*Named Pipe do servidor*/
+  char *sobusrv = "teste/fifos/srv"; /*Named Pipe do servidor*/
 
   if (argc<=2){
       printf("Modo de uso:\n");

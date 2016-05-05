@@ -9,16 +9,31 @@
 #include <signal.h>
 #include <sys/wait.h>
 
+void sigHandler(int s){
+  switch (s){
+    case SIGUSR1:
+      printf("Sinal OK Recebido.\n");
+    break;
+    case SIGUSR2:
+      printf("Sinal KO Recebido.\n");
+    break;
+    case SIGINT:
+      unlink("teste/fifos/srv");
+    break;
+    default:
+    break;  
+  }
+}
+
 int iniciaTx(char* FIFO, char* ficheiro){
-  int fdFicheiro, fdFIFO;
+  int fdFicheiro, fdFIFO, tamMax;
   char buffer[4096];
   fdFicheiro = open(ficheiro, O_RDONLY);
   fdFIFO = open(FIFO, O_WRONLY);
   printf("TX FIFO: %s\n", FIFO);
   printf("TX File: %s\n", ficheiro);
-  while (read(fdFicheiro, buffer, 4096) > 0){
-    printf("\n%s\n", buffer);
-    write(fdFIFO, buffer, 4096);
+  while ((tamMax=read(fdFicheiro, buffer, 4096)) > 0){
+    write(fdFIFO, buffer, tamMax);
   }
   close(fdFIFO);
   close(fdFicheiro);
@@ -26,16 +41,15 @@ int iniciaTx(char* FIFO, char* ficheiro){
 }
 
 int iniciaRx(char* FIFO, char* ficheiro){
-  int fdFicheiro, fdFIFO;
+  int fdFicheiro, fdFIFO, tamMax;
   char buffer[4096];
-  mkfifo(FIFO, 0666);
   printf("RX FIFO: %s\n", FIFO);
   printf("RX File: %s\n", ficheiro);
+  mkfifo(FIFO, 0666);
+  fdFicheiro = open(ficheiro, O_WRONLY | O_CREAT, 0644); /*stdout*/
   fdFIFO = open(FIFO, O_RDONLY); /*stdin*/
-  fdFicheiro = open(ficheiro, O_WRONLY | O_APPEND | O_CREAT ); /*stdout*/
-  while (read(fdFIFO, buffer, 4096) > 0){
-    printf("\n%s\n", buffer);
-    write(fdFicheiro, buffer, 4096);
+  while ((tamMax=read(fdFIFO, buffer, 4096)) > 0){
+    write(fdFicheiro, buffer, tamMax);
   }
   close(fdFicheiro);
   close(fdFIFO);
@@ -53,8 +67,8 @@ void comandoR(char* FIFO, char* ficheiro){
 
 int executaComando(char *cmd, int pid){
   char fifo[64];
-  char *path = "./teste/fifos/";
-  char *ficheiro = "./teste/serverfiles/a.txt";
+  char *path = "teste/fifos/";
+  char *ficheiro = "teste/serverfiles/a.txt";
   sprintf(fifo, "%s%d", path, pid);
   if (strcmp(cmd,"B")==0){
     comandoB(fifo, ficheiro);
@@ -82,17 +96,17 @@ int leComandoPid(char *comando){ /*retorna o pid do processo filho*/
 
 int main(){
   int fd, loopT, pid;
-  char *servidorFIFOPATH = "./teste/fifos/srv";
+  char *servidorFIFOPATH = "teste/fifos/srv";
 /*  char servidorFIFO[250]; */
   char buffer[32];
   
   /*    sprintf(buffer, "%s%d", servidorFIFO, getpid()); cria string para abrir buffer /tmp/sobuserv/7850 com PID do servidor*/
   loopT = 1;
-  mkfifo(servidorFIFOPATH, 0666);
+  signal(SIGINT,sigHandler);
   
-   if (mkfifo(servidorFIFOPATH, 0666)) {
+  if ((mkfifo(servidorFIFOPATH, 0666)) == 0) {
      printf("arrancou servidor com id: %d\n", getpid());
-   }
+  }
   else {
     printf("Erro de FIFO");
     loopT = 0;
@@ -105,8 +119,8 @@ int main(){
     }
     close(fd);
     kill(pid,SIGUSR1);
-    printf("Enviou Sinal %d para o pid %d\n", SIGUSR1, pid);
     executaComando("B", pid);
+    printf("Enviou Sinal %d para o pid %d\n", SIGUSR1, pid);
   }
   unlink(servidorFIFOPATH);
   return 0;

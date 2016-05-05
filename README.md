@@ -1,5 +1,5 @@
 # SO
-Trabalho Pratico da disciplina de Sistemas Operativos - Universidade do Minho 2006
+Trabalho Pratico da disciplina de Sistemas Operativos - Universidade do Minho 2016
 
 #criar cliente
 gcc -o sobucli -Wall --ansi -pedantic -g cliente.c

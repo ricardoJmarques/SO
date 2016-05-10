@@ -19,6 +19,7 @@ void sigHandler(int s){
     break;
     case SIGINT:
       unlink("teste/fifos/srv");
+      kill(getpid(), SIGQUIT);
     break;
     default:
     break;  
@@ -65,16 +66,18 @@ void comandoR(char* FIFO, char* ficheiro){
   iniciaTx(FIFO, ficheiro);
 }
 
-int executaComando(char *cmd, int pid){
-  char fifo[64];
-  char *path = "teste/fifos/";
-  char *ficheiro = "teste/serverfiles/a.txt";
+int executaComando(char *cmd, int pid, char *ficheiro){
+  char fifo[128];
+  char file[128];
+  char path[] = "teste/fifos/";
+  char pathFicheiro[] = "teste/serverfiles/";
   sprintf(fifo, "%s%d", path, pid);
+  sprintf(file, "%s%s", pathFicheiro, ficheiro);
   if (strcmp(cmd,"B")==0){
-    comandoB(fifo, ficheiro);
+    comandoB(fifo, file);
   }
   else if (strcmp(cmd,"R")==0)
-    comandoR(fifo, ficheiro);
+    comandoR(fifo, file);
   else {
     printf("Comando Desconhecido\n");
   }
@@ -85,20 +88,23 @@ int leComandoPid(char *comando){ /*retorna o pid do processo filho*/
   int pid;
   char *cmd;
   char *str;
+  char *ficheiro;
   str = (char*)malloc(sizeof(char) * (strlen(comando)+1));
   cmd = (char*)malloc(sizeof(char) * (strlen(comando)+1));
   str = strtok(comando, "\r\n");
   pid = atoi(strtok(str, " "));
-  cmd = strtok(NULL, "\0");
-  printf("Recebeu do pid %d o comando %s\n", pid, cmd);
+  cmd = strtok(NULL, " ");
+  ficheiro = strtok(NULL, "\0");
+  printf("Recebeu do pid %d o comando %s para o ficheiro %s\n", pid, cmd, ficheiro);
   return pid;
 }
 
 int main(){
-  int fd, loopT, pid;
+  int fd, loopT, pid, i;
   char *servidorFIFOPATH = "teste/fifos/srv";
 /*  char servidorFIFO[250]; */
-  char buffer[32];
+  char buffer[128];
+  char *str, *ficheiro, *cmd;
   
   /*    sprintf(buffer, "%s%d", servidorFIFO, getpid()); cria string para abrir buffer /tmp/sobuserv/7850 com PID do servidor*/
   loopT = 1;
@@ -114,12 +120,17 @@ int main(){
   
   while(loopT){
     fd = open(servidorFIFOPATH, O_RDONLY);
-    while (read(fd, buffer, 32) > 0) {
-      pid = leComandoPid(buffer);
+    for (i=0; i<128; i++) buffer[i] = '\0';
+    while (read(fd, buffer, 128) > 0) {
+      str = strtok(buffer, "\r\n");
+      pid = atoi(strtok(str, " "));
+      cmd = strtok(NULL, " ");
+      ficheiro = strtok(NULL, "\0");
     }
     close(fd);
     kill(pid,SIGUSR1);
-    executaComando("B", pid);
+    printf("Recebi do pid %d o comando %s para o ficheiro %s\n", pid, cmd, ficheiro);
+    executaComando(cmd, pid, ficheiro);
     printf("Enviou Sinal %d para o pid %d\n", SIGUSR1, pid);
   }
   unlink(servidorFIFOPATH);

@@ -14,19 +14,6 @@
 
 #define tamCMD 32
 
-/*
-char *CriaComando(int cmd){
-  switch cmd {
-
-    case 0: 
-    break;
-    case 1: 
-    break;
-    default:
-    break;
-}
-*/
-
 void sigHandler(int s){
   switch (s){
     case SIGUSR1:
@@ -40,13 +27,14 @@ void sigHandler(int s){
   }
 }
 
-int enviaComando(char* FIFO, char TIPO){
+int enviaComando(char* FIFO, char TIPO, char* ficheiro){
   int pid, fd, i, status;
   char comando[32];
 
   signal(SIGUSR1,sigHandler);
+  signal(SIGUSR2,sigHandler);
   pid = getpid();
-  i = sprintf(comando, "%d %c", pid, TIPO);
+  i = sprintf(comando, "%d %c %s", pid, TIPO, ficheiro);
 
   if(fork()==0){
     fd = open(FIFO, O_WRONLY);
@@ -123,47 +111,27 @@ char *calculaSha1Sum(char* nomeFicheiro){
 	return str;
 }
 
-int backupCmd(int argc, char* argv[]){
+int backupCmd(char* fifo, int argc, char* argv[]){
   int i, fd;
   char *sha1, *path;
   char str1[100];
   int pid;
   pid=getpid();
-  if (argc == 3){
-    /*fd = open(argv[2], O_RDONLY);*/
-    fd = open("teste/clientfiles/a.txt", O_RDONLY);
-      if (fd == -1){
-        printf("Erro ao abrir Ficheiro\n");
-      }
-      else{
-        close(fd);
-        sha1 = calculaSha1Sum(argv[2]);
-        sha1 = strtok(sha1, " ");
-        path = strtok(NULL, "\n");
-        printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
-        printf("inicia copia do ficheiro %s para o servidor.\n", argv[2]);
-        sprintf(str1, "teste/fifos/%d", pid);
-        printf("%s - %s\n",str1,path);
-        iniciaTx(str1, "teste/clientfiles/a.txt");
-      }
-  }
-  
-  else{
-    for (i=2; i<argc; i++){
-      fd = open(argv[i], O_RDONLY);
-      if (fd == -1){
-        printf("Erro ao abrir Ficheiro\n");
-      }
-      else{
-        close(fd);
-        sha1 = calculaSha1Sum(argv[i]);
-        sha1 = strtok(sha1, " ");
-        path = strtok(NULL, "\n");
-        printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
-        printf("inicia copia do ficheiro %s para o servidor.\n", argv[i]);
-        sprintf(str1, "teste/fifos/%d", pid);
-        iniciaTx(str1, path);
-      }
+  for (i=2; i<argc; i++){
+    fd = open(argv[i], O_RDONLY);
+    if (fd == -1){
+      printf("Erro ao abrir Ficheiro\n");
+    }
+    else{
+      close(fd);
+      sha1 = calculaSha1Sum(argv[i]);
+      sha1 = strtok(sha1, " ");
+      path = strtok(NULL, "\n");
+      printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
+      printf("inicia copia do ficheiro %s para o servidor.\n", argv[i]);
+      sprintf(str1, "teste/fifos/%d", pid);
+      enviaComando(fifo, 'B', argv[i]);
+      iniciaTx(str1, argv[i]);
     }
   }
   return 0;
@@ -175,42 +143,22 @@ int restoreCmd(int argc, char *argv[]){
   char str1[100];
   int pid;
   pid=getpid();
-  if (argc == 3){
-    fd = open(argv[2], O_RDONLY);
+  for (i=2; i<argc; i++){
+    fd = open(argv[i], O_RDONLY);
     if (fd == -1){
       printf("Erro ao abrir Ficheiro\n");
     }
     else{
       close(fd);
-      sha1 = calculaSha1Sum(argv[2]);
+      sha1 = calculaSha1Sum(argv[i]);
       sha1 = strtok(sha1, " ");
       path = strtok(NULL, "\n");
       printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
-      printf("inicia reposicao do ficheiro %s do servidor.\n", argv[2]);
+      printf("inicia reposicao do ficheiro %s do servidor.\n", argv[i]);
       sprintf(str1, "teste/fifos/%d", pid);
       iniciaRx(str1, path);
     }
   }
-  
-  else{
-    for (i=2; i<argc; i++){
-      fd = open(argv[i], O_RDONLY);
-      if (fd == -1){
-        printf("Erro ao abrir Ficheiro\n");
-      }
-      else{
-        close(fd);
-        sha1 = calculaSha1Sum(argv[i]);
-        sha1 = strtok(sha1, " ");
-        path = strtok(NULL, "\n");
-        printf("Resultado SHA1SUM: %s - Ficheiro: %s\n", sha1, path);
-        printf("inicia reposicao do ficheiro %s do servidor.\n", argv[i]);
-        sprintf(str1, "teste/fifos/%d", pid);
-        iniciaRx(str1, path);
-      }
-    }
-  }
-  
   return 0;
 }
     
@@ -225,13 +173,11 @@ int main(int argc, char *argv[]){
   else{
     /*comando backup */
   	if(strcmp(argv[1], "backup")==0){
-      enviaComando(sobusrv, 'B');
-      backupCmd(argc, argv);
+      backupCmd(sobusrv, argc, argv);
   	}
   	
     /*comando restore*/
   	else if (strcmp(argv[1], "restore")==0){
-      enviaComando(sobusrv, 'R');
   	  restoreCmd(argc, argv);
     }
     

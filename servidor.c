@@ -71,7 +71,7 @@ int executaComando(char *cmd, int pid, char *ficheiro){
   char file[128];
   char path[] = "teste/fifos/";
   char pathFicheiro[] = "teste/serverfiles/";
-  sprintf(fifo, "%s%d", path, pid);
+  sprintf(fifo, "%s%dD", path, pid);
   sprintf(file, "%s%s", pathFicheiro, ficheiro);
   if (strcmp(cmd,"B")==0){
     comandoB(fifo, file);
@@ -99,18 +99,22 @@ int leComandoPid(char *comando){ /*retorna o pid do processo filho*/
   return pid;
 }
 
-int main(){
+/* antiga main */
+int criaServer(char *FIFO){	
   int fd, loopT, pid, i;
-  char *servidorFIFOPATH = "teste/fifos/srv";
-/*  char servidorFIFO[250]; */
+  char servidorFIFODados[128];
+  char servidorFIFOComando[128];
   char buffer[128];
   char *str, *ficheiro, *cmd;
+  char *servidorFIFOPATH = "teste/fifos/";
   
-  /*    sprintf(buffer, "%s%d", servidorFIFO, getpid()); cria string para abrir buffer /tmp/sobuserv/7850 com PID do servidor*/
+  sprintf(servidorFIFODados, "%s%dD", servidorFIFOPATH, pid);
+  sprintf(servidorFIFOComando, "%s%dC", servidorFIFOPATH, pid);
+  
   loopT = 1;
   signal(SIGINT,sigHandler);
   
-  if ((mkfifo(servidorFIFOPATH, 0666)) == 0) {
+  if ((mkfifo(servidorFIFOComando, 0666)) == 0) {
      printf("arrancou servidor com id: %d\n", getpid());
   }
   else {
@@ -119,7 +123,7 @@ int main(){
   }
   
   while(loopT){
-    fd = open(servidorFIFOPATH, O_RDONLY);
+    fd = open(servidorFIFOComando, O_RDONLY);
     for (i=0; i<128; i++) buffer[i] = '\0';
     while (read(fd, buffer, 128) > 0) {
       str = strtok(buffer, "\r\n");
@@ -133,7 +137,7 @@ int main(){
     executaComando(cmd, pid, ficheiro);
     printf("Enviou Sinal %d para o pid %d\n", SIGUSR1, pid);
   }
-  unlink(servidorFIFOPATH);
+  unlink(servidorFIFOComando);
   return 0;
 }
 

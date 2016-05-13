@@ -1,11 +1,17 @@
 # SO
 Trabalho Pratico da disciplina de Sistemas Operativos - Universidade do Minho 2016
 
+#criar tudo
+make all
+
 #criar cliente
-gcc -o sobucli -Wall --ansi -pedantic -g cliente.c
+make sobucli
 
 #criar servidor
-gcc -o sobusrv -Wall --ansi -pedantic -g servidor.c
+make sobusrv
+
+#criar livrarias - ficheiros *.c sem main(), trigger -c
+gcc --ansi -pedantic -Wall -c ficheiro.c
 
 #comandos importantes
 	awk '{print $9}'

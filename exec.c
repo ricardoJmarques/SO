@@ -243,6 +243,5 @@ int makeDirectory(char *dirname)
   else
   {
     wait(&status);
-    return 0;
   }
 }

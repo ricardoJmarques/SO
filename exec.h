@@ -22,3 +22,5 @@ char *getFileAbsolutePath(char *file);
 char *getPermitions(char *ficheiro);
 
 int makeDirectory(char *dirname);
+
+int linker(char *arg1, char *arg2)

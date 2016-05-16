@@ -71,4 +71,76 @@ char *genericExec3(char* nomeFicheiro){
 	return str;
 }
 
+char *getFileName(char *file)
+{
+  char *str, *aux ,res[128];
+  int i, status;
+  int fd[2], nBytesLidos;
+  char buff[128];
+
+  pipe(fd);
+  if (fork()==0)
+  {
+    dup2(fd[1],1);
+    close(fd[0]);
+    close(fd[1]);
+      execlp("readlink","readlink","-f",file, NULL);
+      _exit(0);
+  }
+  else
+  {
+    wait(&status);
+    close(fd[1]);
+      nBytesLidos = read(fd[0], buff, 128);
+      aux = strtok(buff, "\r\n");
+      str = malloc(sizeof(char) * nBytesLidos);
+      if(str){
+        strcpy(str, aux);
+      }
+      
+      close(fd[0]);
+    for (i = strlen(str);  i>0 && str[i]!='/'; i--); 
+      strcpy(res,&str[i+1]);
+    
+  }
+  return res;
+}
+
+char *getFileAbsolutePath(char *file)
+{
+  char *str, *aux ,res[128];
+  int i, status;
+  int fd[2], nBytesLidos;
+  char buff[128];
+
+  pipe(fd);
+  if (fork()==0)
+  {
+    dup2(fd[1],1);
+    close(fd[0]);
+    close(fd[1]);
+      execlp("readlink","readlink","-f",file, NULL);
+      _exit(0);
+  }
+  else
+  {
+    wait(&status);
+    close(fd[1]);
+      nBytesLidos = read(fd[0], buff, 128);
+      aux = strtok(buff, "\r\n");
+      str = malloc(sizeof(char) * nBytesLidos);
+      if(str){
+        strcpy(str, aux);
+      }
+      
+      close(fd[0]);
+    for (i = strlen(str);  i>0 && str[i]!='/'; i--);
+    for (j = 0; j < i; j++)
+    {
+      res[j]=str[j];
+    }
+    res[j]='\0';
+  }
+  return res;
+}
 

@@ -14,3 +14,7 @@
 char *calculaSha1Sum(char* nomeFicheiro);
 
 char *genericExec3(char* nomeFicheiro);
+
+char *getFileName(char *file);
+
+char *getFileAbsolutePath(char *file);

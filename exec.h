@@ -18,3 +18,7 @@ char *genericExec3(char* nomeFicheiro);
 char *getFileName(char *file);
 
 char *getFileAbsolutePath(char *file);
+
+char *getPermitions(char *ficheiro);
+
+int makeDirectory(char *dirname);

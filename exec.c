@@ -144,3 +144,105 @@ char *getFileAbsolutePath(char *file)
   return res;
 }
 
+char fromBinToOctal(char ch1,char ch2, char ch3)
+{
+  if(ch1=='1')
+    {
+      if (ch2=='1')
+      {
+        if (ch3=='1') return '7';
+        else      return '6';
+      }
+      else
+      {
+        if (ch3=='1') return '5';
+        else      return '4';
+      }
+    }
+    else
+    {
+      if (ch2=='1')
+      {
+        if (ch3=='1') return '3';
+        else      return '2';
+      }
+      else
+      {
+        if (ch3=='1') return '1';
+        else      return '0';
+      }
+    } 
+}
+
+char *getPermitions(char *ficheiro)
+{
+  int i=0;
+  int p[2];
+  int pp[2];
+  char *bin;
+  char oct[4];
+  char buf;
+  
+  pipe(p);
+  if (fork()==0)
+  {
+    pipe(pp);
+    if (fork()==0)
+      {
+        dup2(pp[1],1);
+        close(pp[0]);
+        close(pp[1]);
+        execlp("ls","ls","-l",ficheiro,NULL);
+      }
+    else
+      {
+        dup2(pp[0],0);
+        dup2(p[1],1);
+        close(pp[0]);
+        close(pp[1]);
+        close(p[0]);
+        close(p[1]);
+        execlp("awk","awk","{print $1}",NULL);
+      } 
+
+  }
+  else
+  {
+    dup2(p[0],0);
+    close(p[0]);
+    close(p[1]);
+    while(read(0,&buf,1)!=0)
+    {
+      if (buf=='-')
+      {
+        bin[i]='0';
+      }
+      else
+      {
+        bin[i]='1';
+      }
+      i++;
+    }
+    
+    oct[0]=bin[0];
+    oct[1]=fromBinToOctal(bin[1],bin[2],bin[3]);
+    oct[2]=fromBinToOctal(bin[4],bin[5],bin[6]);
+    oct[3]=fromBinToOctal(bin[7],bin[8],bin[9]);
+    return oct;
+  }
+}
+
+int makeDirectory(char *dirname)
+{
+  int status;
+  if (fork()==0)
+  {
+    execlp("mkdir","mkdir",argv[1], NULL);
+      _exit(0);
+  }
+  else
+  {
+    wait(&status);
+    return 0;
+  }
+}

@@ -245,3 +245,18 @@ int makeDirectory(char *dirname)
     wait(&status);
   }
 }
+
+/*arg1 destino, arg2 nome do link(ficheiro)*/
+int linker(char *arg1, char *arg2)
+{
+	int status;
+	if (fork()==0)
+	{
+		execlp("ln","ln","-s",arg1,arg2,NULL);
+	}
+	else
+	{
+		wait(&status);
+	}
+	return 0;	
+}
